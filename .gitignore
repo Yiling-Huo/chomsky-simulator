@@ -1,0 +1,9 @@
+build/
+dist/
+path/
+unused/
+assets/glove-wiki-gigaword-200.txt
+build.py
+chomsky-simulator.spec
+pyinstaller-build-command.txt
+icon.ico
