@@ -108,16 +108,22 @@ def load_sim_model():
     sim_model = gensim.models.KeyedVectors.load_word2vec_format('assets/glove-wiki-gigaword-200.txt', binary=False)
     return sim_model
 
-# roll text (for intro)
-def roll_text(text, x, y, delay=100):
+# roll text (for intro and debrief)
+def roll_text(text, x, y, delay=100, font=''):
     for i in range(len(text)):
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-        # Render the text up to the current character
-        rendered_text = text_font.render(text[:i + 1], True, jet)
-        text_rect = rendered_text.get_rect(center=(x, y))
+        if font == 'small':
+            # Render the text up to the current character
+            rendered_text = text_font_smaller.render(text[:i + 1], True, jet)
+            # because this is only used or debriefing so can simply use topleft
+            text_rect = rendered_text.get_rect(topleft=(x, y))
+        else:
+            # Render the text up to the current character
+            rendered_text = text_font.render(text[:i + 1], True, jet)
+            text_rect = rendered_text.get_rect(center=(x, y))
         # Clear the area
         pygame.draw.rect(screen,porcelain,text_rect,border_radius = 3)
         # Blit the rendered text onto the screen
@@ -132,29 +138,28 @@ def wipe():
     pygame.draw.rect(screen, porcelain, pygame.Rect(0, 0, window_width, window_height))
     pygame.display.flip()
 
-# onclickfunctions for the start button
+# onClickFunction for the quit button
+def quit():
+    global running
+    running = False
+
+# onClickFunction for the start button
 def start():
-    global started, hard, start_button, start_button_hard
+    global debriefing, started
+    debriefing = False
     started = True
-    hard = False
     wipe()
     init_game()
 
-def start_hard():
-    global started, hard
-    started = True
-    hard = True
-    wipe()
-    init_game()
-
-# initialise a game of 20 trials
+# initialise a game of 10 trials
 def init_game():
-    global trial_count, correct_count, reached_end, chomsky_score
+    global trial_count, correct_count, chomsky_score, all_sentences, rolling
     wipe()
     trial_count = 0
     correct_count = 0
     chomsky_score = 0
-    reached_end = False
+    all_sentences = []
+    rolling = True
     init_trial()
 
 # initialise a trial
@@ -278,11 +283,11 @@ def select():
         for i in range(len(selected)):
             message = text_font.render(' '.join(selected[i]), True, jet)
             screen.blit(message, message.get_rect(topleft = (95, 150+(i*50))))
-        score = text_font_small.render('Chomsky score: '+str(chomsky_score), True, jet)
-        screen.blit(score, score.get_rect(topleft = (900, 75)))
+        score = text_font.render('CP: '+str(chomsky_score), True, jet)
+        screen.blit(score, score.get_rect(topleft = (1050, 75)))
         # print message
         message = text_font_small.render('+'+str(options[answer]) if options[answer] > 0 else str(options[answer]), True, jet)
-        screen.blit(message, message.get_rect(center = (825, 75)))
+        screen.blit(message, message.get_rect(center = (950, 75)))
         pygame.display.flip()
         if current_time - start_time >= delay:
             break
@@ -314,14 +319,20 @@ def correct():
                 else:
                     message = text_font.render(' '.join(selected[i]), True, jet)
                 screen.blit(message, message.get_rect(topleft = (95, 150+(i*50))))
-            score = text_font_small.render('Chomsky score: '+str(chomsky_score), True, jet)
-            screen.blit(score, score.get_rect(topleft = (900, 75)))
+            score = text_font.render('CP: '+str(chomsky_score), True, jet)
+            screen.blit(score, score.get_rect(topleft = (1050, 75)))
             # print correct message
             screen.blit(correct, correct.get_rect(center = (700, 340)))
             pygame.display.flip()
             if current_time - start_time >= delay:
-                init_trial()
                 break
+        # add the sentence to all sentences
+        selected[-1][-1] += '.'
+        all_sentences.append([' '])
+        for line in selected:
+            all_sentences.append(line)
+        wipe()
+        init_trial()
     else:
         pygame.display.flip()
         current_location += 1
@@ -338,27 +349,42 @@ def wrong():
         for i in range(len(selected)):
             message = text_font.render(' '.join(selected[i]), True, jet)
             screen.blit(message, message.get_rect(topleft = (95, 150+(i*50))))
-        score = text_font_small.render('Chomsky score: '+str(chomsky_score), True, jet)
-        screen.blit(score, score.get_rect(topleft = (900, 75)))
+        score = text_font.render('CP: '+str(chomsky_score), True, jet)
+        screen.blit(score, score.get_rect(topleft = (1050, 75)))
         # print wrong message
         wrong = button_font.render('Oh no, ungrammatical...', True, jet)
         screen.blit(wrong, wrong.get_rect(center = (700, 340)))
         pygame.display.flip()
         if current_time - start_time >= delay:
-            init_trial()
             break
+    # add the sentence to all sentences
+    all_sentences.append([' '])
+    for line in selected:
+        all_sentences.append(line)
+    wipe()
+    init_trial()
 
-def quit():
-    global running
-    running = False
+def roll_all_sentences():
+    global rolling
+    if rolling:
+        for i in range(len(all_sentences)):
+            roll_text(' '.join(all_sentences[i]), 100, 100+(i*25),delay=35,font='small')
+            rolling = False
+    else:
+        for i in range(len(all_sentences)):
+            message = text_font_smaller.render(' '.join(all_sentences[i]), True, jet)
+            screen.blit(message, message.get_rect(topleft = (100, 100+(i*25))))
 
 ##########
-# Main game
+# Main function
 ##########
 def main():
-    global screen, icon, clock, button_font, text_font, text_font_small, button_font_tr, text_font_tr
+    global screen, icon, clock, button_font, text_font, text_font_small, text_font_smaller
     global cfg, content_words, words, block_list, sim_model
-    global running, started, hard, selected, current_location, option_buttons, option_1_rect, option_2_rect, option_3_rect
+    global running, started, selected, current_location, option_buttons
+    ##########
+    # Initialise
+    ##########
     # Set working directory to the location of this .py file
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     pygame.init()
@@ -366,22 +392,41 @@ def main():
     clock = pygame.time.Clock()
     icon = pygame.image.load('assets/icon.png')
     pygame.display.set_icon(icon)
-    pygame.display.set_caption('Chomsky Simulator')
+    pygame.display.set_caption('Uncolored Green Idea Game')
     screen.fill(porcelain)
+
+    ##########
+    # Game assets
+    ##########
+    # text fonts
+    text_font_smaller = pygame.font.Font('assets/joystix-monospace.otf',15)
     text_font_small = pygame.font.Font('assets/joystix-monospace.otf',20)
     text_font = pygame.font.Font('assets/joystix-monospace.otf',24)
     button_font = pygame.font.Font('assets/joystix-monospace.otf',28)
+    # buttons
+    start_button = Button('start', 130, 50, (535, 600), 3, start)
+    restart_button = Button('new game', 220, 50, (800, 300), 3, start)
+    quit_button = Button('quit game', 220, 50, (1100, 300), 3, quit)
+    # the green idea
+    chat = pygame.transform.scale(pygame.image.load('assets/chat2.png'), (200,200))
+    idea_dark = pygame.transform.scale(pygame.image.load('assets/idea-dark.png'), (350,350))
+    idea_light = pygame.transform.scale(pygame.image.load('assets/idea-light.png'), (350,350))
+    ideas = [idea_dark, idea_light]
+    index = 0
+    interval = 2500
 
-    # roll intro
+    ##########
+    # Roll Intro
+    ##########
     roll_text('Colorless green ideas sleep furiously.', 700, 400)
     pygame.time.delay(300)
     roll_text('- Noam Chomsky', 900, 600)
     pygame.time.delay(1000)
 
-    # game variables
-    started = False
-
-    # get materials
+    ##########
+    # Get matrials
+    ##########
+    # show message
     wipe()
     load_message = text_font.render('Loading NLP magic...', True, jet)
     screen.blit(load_message, load_message.get_rect(center = (950, 750)))
@@ -417,20 +462,15 @@ def main():
             block_list[line[0]] = line[1:]
     # load similarity model
     sim_model = load_sim_model()
+    # sim_model = []
 
-    # game assets
-    start_button = Button('start', 130, 50, (535, 400), 3, start)
-    quit_button = Button('quit game', 220, 50, (490, 500), 3, quit)
-    chat = pygame.transform.scale(pygame.image.load('assets/chat2.png'), (200,200))
-    idea_dark = pygame.transform.scale(pygame.image.load('assets/idea-dark.png'), (350,350))
-    idea_light = pygame.transform.scale(pygame.image.load('assets/idea-light.png'), (350,350))
-    ideas = [idea_dark, idea_light]
-    index = 0
-    interval = 2500
-    start_time = pygame.time.get_ticks()
-
+    ##########
+    # Main game logic
+    ##########
     # get ready to start
     wipe()
+    start_time = pygame.time.get_ticks()
+    started = False
     running = True
 
     # main loop
@@ -455,31 +495,36 @@ def main():
 
         # manage game
         if not started:
-            message1 = text_font.render('Welcome to Chomsky Simulator!', True, jet)
+            message1 = text_font.render('Uncolored Green Idea Game', True, jet)
             message2 = text_font_small.render("Let's build grammatical sentences that make no semantic sense.", True, jet)
-            message3 = text_font_small.render('Select the option that best continues the sentence in a Chomskian way.', True, jet)
+            message3 = text_font_small.render('Choose the option that continues the sentence grammatically.', True, jet)
+            message4 = text_font_small.render('Gain more C(homsky)P(oint) if your choice makes less sense.', True, jet)
+            message5 = text_font.render('A game by Yiling Huo', True, battleship)
             screen.blit(message1, message1.get_rect(center = (600, 100)))
             screen.blit(message2, message2.get_rect(topleft = (100, 200)))
             screen.blit(message3, message3.get_rect(topleft = (100, 250)))
+            screen.blit(message4, message3.get_rect(topleft = (100, 300)))
+            screen.blit(message5, message3.get_rect(topleft = (100, 800)))
             start_button.draw()
         elif trial_count == 10:
             # only cover the area that's not the lightbulbs
             pygame.draw.rect(screen, porcelain, pygame.Rect(0, 0, window_width, 395))
             pygame.draw.rect(screen, porcelain, pygame.Rect(0, 0, 795, window_height))
             message1 = text_font.render('Game end!', True, jet)
-            message2 = text_font_small.render('Your Chomsky score: '+str(chomsky_score), True, jet)
-            message3 = text_font_small.render('Another game?', True, jet)
-            screen.blit(message1, message1.get_rect(center = (600, 150)))
-            screen.blit(message2, message2.get_rect(center = (600, 200)))
-            screen.blit(message3, message3.get_rect(center = (600, 270)))
-            start_button.draw()
+            message2 = text_font_small.render('Your CP: '+str(chomsky_score), True, jet)
+            message4 = text_font.render('Your sentences', True, jet)
+            screen.blit(message1, message1.get_rect(center = (1050, 100)))
+            screen.blit(message2, message2.get_rect(center = (1050, 200)))
+            screen.blit(message4, message4.get_rect(topleft = (100, 50)))
+            roll_all_sentences()
+            restart_button.draw()
             quit_button.draw()
         else:
             for i in range(len(selected)):
                 message = text_font.render(' '.join(selected[i]), True, jet)
                 screen.blit(message, message.get_rect(topleft = (95, 150+(i*50))))
-            score = text_font_small.render('Chomsky score: '+str(chomsky_score), True, jet)
-            screen.blit(score, score.get_rect(topleft = (900, 75)))
+            score = text_font.render('CP: '+str(chomsky_score), True, jet)
+            screen.blit(score, score.get_rect(topleft = (1050, 75)))
             for option in option_buttons:
                 option.draw()
         pygame.display.flip()
