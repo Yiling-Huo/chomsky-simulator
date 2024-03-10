@@ -2,7 +2,8 @@ build/
 dist/
 path/
 unused/
-assets/glove-wiki-gigaword-200.txt
+assets/aes/
+assets/data/glove-wiki-gigaword-200.txt
 build.py
 uncolored-green-idea.spec
 pyinstaller-build-command.txt

@@ -105,7 +105,7 @@ class Text_button:
 
 # load word2vec model
 def load_sim_model():
-    sim_model = gensim.models.KeyedVectors.load_word2vec_format('assets/glove-wiki-gigaword-200.txt', binary=False)
+    sim_model = gensim.models.KeyedVectors.load_word2vec_format('assets/data/glove-wiki-gigaword-200.txt', binary=False)
     return sim_model
 
 # roll text (for intro and debrief)
@@ -388,9 +388,10 @@ def main():
     # Set working directory to the location of this .py file
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     pygame.init()
+    pygame.mixer.init()
     screen = pygame.display.set_mode((window_width, window_height))
     clock = pygame.time.Clock()
-    icon = pygame.image.load('assets/icon.png')
+    icon = pygame.image.load('assets/aes/icon.png')
     pygame.display.set_icon(icon)
     pygame.display.set_caption('Uncolored Green Idea Game')
     screen.fill(porcelain)
@@ -399,18 +400,18 @@ def main():
     # Game assets
     ##########
     # text fonts
-    text_font_smaller = pygame.font.Font('assets/joystix-monospace.otf',15)
-    text_font_small = pygame.font.Font('assets/joystix-monospace.otf',20)
-    text_font = pygame.font.Font('assets/joystix-monospace.otf',24)
-    button_font = pygame.font.Font('assets/joystix-monospace.otf',28)
+    text_font_smaller = pygame.font.Font('assets/aes/joystix-monospace.otf',15)
+    text_font_small = pygame.font.Font('assets/aes/joystix-monospace.otf',20)
+    text_font = pygame.font.Font('assets/aes/joystix-monospace.otf',24)
+    button_font = pygame.font.Font('assets/aes/joystix-monospace.otf',28)
     # buttons
-    start_button = Button('start', 130, 50, (535, 600), 3, start)
+    start_button = Button('start', 130, 50, (535, 550), 3, start)
     restart_button = Button('new game', 220, 50, (800, 300), 3, start)
     quit_button = Button('quit game', 220, 50, (1100, 300), 3, quit)
     # the green idea
-    chat = pygame.transform.scale(pygame.image.load('assets/chat2.png'), (200,200))
-    idea_dark = pygame.transform.scale(pygame.image.load('assets/idea-dark.png'), (350,350))
-    idea_light = pygame.transform.scale(pygame.image.load('assets/idea-light.png'), (350,350))
+    chat = pygame.transform.scale(pygame.image.load('assets/aes/chat2.png'), (200,200))
+    idea_dark = pygame.transform.scale(pygame.image.load('assets/aes/idea-dark.png'), (350,350))
+    idea_light = pygame.transform.scale(pygame.image.load('assets/aes/idea-light.png'), (350,350))
     ideas = [idea_dark, idea_light]
     index = 0
     interval = 2500
@@ -426,6 +427,9 @@ def main():
     ##########
     # Get matrials
     ##########
+    # play loading bgm
+    pygame.mixer_music.load('assets/aes/maou_bgm_8bit2.mp3')
+    pygame.mixer.music.play(-1,0.0)
     # show message
     wipe()
     load_message = text_font.render('Loading NLP magic...', True, jet)
@@ -433,7 +437,7 @@ def main():
     pygame.display.flip()
 
     # get cfg from a .csv file of either node,word or node,node1,node2
-    with open('assets/cfg.csv', 'r') as inputfile:
+    with open('assets/data/cfg.csv', 'r') as inputfile:
         cr = csv.reader(inputfile)
         content = [line for line in cr if len(line)>0]
         cfg = {}
@@ -445,7 +449,7 @@ def main():
     # get a pos:words dictionary
     needed = ['NN','NNS','DTS','DTP','JJ','CD','VBDI','VBZI','VBGI','RBA','VBD','VBZ','VBG','COPSN','COPSP','VBI','VB','COPPN','COPPP','RBP','IN']
     content_words = ['NN','NNS','JJ','VBDI','VBZI','VBGI','RBA','VBD','VBZ','VBG','VBI','VB','RBP']
-    with open('assets/pos_corpus_built_from_wiki_cleaned.csv', 'r') as wordinput:
+    with open('assets/data/pos_corpus_built_from_wiki_cleaned.csv', 'r') as wordinput:
         cr = csv.reader(wordinput)
         words = {}
         for line in cr:
@@ -455,7 +459,7 @@ def main():
                 else:
                     words[line[0]].append(line[1])
     # get the block list
-    with open('assets/block_list.csv', 'r') as blockinput:
+    with open('assets/data/block_list.csv', 'r') as blockinput:
         cr = csv.reader(blockinput)
         block_list = {}
         for line in cr:
@@ -467,6 +471,10 @@ def main():
     ##########
     # Main game logic
     ##########
+    # switch bgm
+    pygame.mixer.music.stop()
+    pygame.mixer_music.load('assets/aes/maou_bgm_8bit16.mp3')
+    pygame.mixer.music.play(-1,0.0)
     # get ready to start
     wipe()
     start_time = pygame.time.get_ticks()
@@ -498,13 +506,17 @@ def main():
             message1 = text_font.render('Uncolored Green Idea Game', True, jet)
             message2 = text_font_small.render("Let's build grammatical sentences that make no semantic sense.", True, jet)
             message3 = text_font_small.render('Choose the option that continues the sentence grammatically.', True, jet)
-            message4 = text_font_small.render('Gain more C(homsky)P(oint) if your choice makes less sense.', True, jet)
-            message5 = text_font.render('A game by Yiling Huo', True, battleship)
+            message4 = text_font_small.render('Gain more C(homsky)P(oints) if your choice makes less sense.', True, jet)
+            message5 = text_font_small.render('created by Yiling Huo', True, battleship)
+            message6 = text_font_smaller.render('images: Bakunetsu Kaito', True, battleship)
+            message7 = text_font_smaller.render('music: maoudamashii', True, battleship)
             screen.blit(message1, message1.get_rect(center = (600, 100)))
             screen.blit(message2, message2.get_rect(topleft = (100, 200)))
             screen.blit(message3, message3.get_rect(topleft = (100, 250)))
-            screen.blit(message4, message3.get_rect(topleft = (100, 300)))
-            screen.blit(message5, message3.get_rect(topleft = (100, 800)))
+            screen.blit(message4, message4.get_rect(topleft = (100, 300)))
+            screen.blit(message5, message5.get_rect(topleft = (100, 750)))
+            screen.blit(message6, message6.get_rect(topleft = (100, 800)))
+            screen.blit(message7, message7.get_rect(topleft = (100, 830)))
             start_button.draw()
         elif trial_count == 10:
             # only cover the area that's not the lightbulbs
