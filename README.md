@@ -1,7 +1,9 @@
 # Uncolored Green Idea Game
 A game where you get to build grammatical nonsense sentences like Chomsky did.
 
-[Download game for Windows](https://drive.google.com/file/d/1vYeqa27ony8s-Qk5t39FrVAWgjDeKFpR/view?usp=drive_link)
+[Download game for Windows](https://drive.google.com/file/d/1EBuJQcmogfXuBO1a9Oq5UgpxvvKG98_W/view?usp=drive_link)
+
+[Video demo](https://youtu.be/_x3nDgyR4fc)
 
 ### version 0.1.1
 

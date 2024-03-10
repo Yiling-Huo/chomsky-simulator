@@ -120,6 +120,10 @@ def roll_text(text, x, y, delay=100, font=''):
             rendered_text = text_font_smaller.render(text[:i + 1], True, jet)
             # because this is only used or debriefing so can simply use topleft
             text_rect = rendered_text.get_rect(topleft=(x, y))
+        elif font == 'large':
+            # Render the text up to the current character
+            rendered_text = text_font_large.render(text[:i + 1], True, jet)
+            text_rect = rendered_text.get_rect(center=(x, y))
         else:
             # Render the text up to the current character
             rendered_text = text_font.render(text[:i + 1], True, jet)
@@ -379,7 +383,7 @@ def roll_all_sentences():
 # Main function
 ##########
 def main():
-    global screen, icon, clock, button_font, text_font, text_font_small, text_font_smaller
+    global screen, icon, clock, button_font, text_font, text_font_large, text_font_small, text_font_smaller
     global cfg, content_words, words, block_list, sim_model
     global running, started, selected, current_location, option_buttons
     ##########
@@ -403,6 +407,7 @@ def main():
     text_font_smaller = pygame.font.Font('assets/aes/joystix-monospace.otf',15)
     text_font_small = pygame.font.Font('assets/aes/joystix-monospace.otf',20)
     text_font = pygame.font.Font('assets/aes/joystix-monospace.otf',24)
+    text_font_large = pygame.font.Font('assets/aes/joystix-monospace.otf',50)
     button_font = pygame.font.Font('assets/aes/joystix-monospace.otf',28)
     # buttons
     start_button = Button('start', 130, 50, (535, 550), 3, start)
@@ -422,7 +427,11 @@ def main():
     roll_text('Colorless green ideas sleep furiously.', 700, 400)
     pygame.time.delay(300)
     roll_text('- Noam Chomsky', 900, 600)
-    pygame.time.delay(1000)
+    pygame.time.delay(750)
+    wipe()
+    pygame.time.delay(500)
+    roll_text('uncolored green idea game', 700, 400, delay=150,font='large')
+    pygame.time.delay(1250)
 
     ##########
     # Get matrials
