@@ -517,8 +517,8 @@ def main():
             screen.blit(message2, message2.get_rect(center = (1050, 200)))
             screen.blit(message4, message4.get_rect(topleft = (100, 50)))
             roll_all_sentences()
-            restart_button.draw()
             quit_button.draw()
+            restart_button.draw()
         else:
             for i in range(len(selected)):
                 message = text_font.render(' '.join(selected[i]), True, jet)
