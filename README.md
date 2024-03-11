@@ -8,7 +8,9 @@ A game where you get to build grammatical nonsense sentences like Chomsky did.
 ### version 0.1.2
 
 2024-03-11:
-- Improved player experience: the ungrammatical choices should now be 'more ungrammatical': Changed the logic to determine ungrammaticality from the block-list to a white-list. 
+- Improved player experience: 
+    - Less chance for the game to accidently say something is ungrammatical when it's not: Changed the logic to determine ungrammaticality from the block-list to a white-list. 
+    - Sense-making now depends on all previous content words instead of just one, so the points you gain are more fair. 
 - Added some more words.
 
 ### version 0.1.1

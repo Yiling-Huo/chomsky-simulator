@@ -81,7 +81,7 @@ class Text_button:
         self.text_rect = self.text_surf.get_rect(topleft = pos)
 
     def draw(self):
-        pygame.draw.rect(screen,porcelain,pygame.Rect(self.pos,(300,60)),border_radius = 3)
+        pygame.draw.rect(screen,porcelain,pygame.Rect(self.pos,(600,60)),border_radius = 3)
         self.text_surf = button_font.render(self.text,True,self.text_color)
         screen.blit(self.text_surf, self.text_rect)
         self.check_click()
@@ -176,7 +176,7 @@ def init_trial():
     generate(cfg)
     # change variables
     selected = [[random.choice(words[sentence[0]])]]
-    if sentence[0][0] in content_words:
+    if sentence[0] in content_words:
         sentence_content_words.append(selected[0][0])
     # the first word doesn't count into the scores
     stepwise_score = int(100/(len(sentence)-1))
@@ -243,6 +243,8 @@ def get_options_based_on_similarity(sentence, current_location, stepwise_score):
                 options[option2] = stepwise_score
         except KeyError:
             return get_options_based_on_similarity(sentence, current_location, stepwise_score)
+        # except ValueError:
+        #     return get_options_based_on_similarity(sentence, current_location, stepwise_score)
     else:
         # if this is the first content word, just consider both options the best one
         options[option1] = stepwise_score
@@ -525,6 +527,8 @@ def main():
             message6 = text_font_smaller.render('special thanks: Andrew Lamont, Bing Li', True, battleship)
             message7 = text_font_smaller.render('music: maoudamashii', True, battleship)
             message8 = text_font_smaller.render('images: Bakunetsu Kaito', True, battleship)
+            message9 = text_font_smaller.render("early access note: game only knows simple syntax (no compound nouns, relative clauses, etc.).",True,battleship)
+            message10 = text_font_smaller.render("                   game doesn't recognize some POS-ambiguous words (stop v./n.).",True,battleship)
             screen.blit(message1, message1.get_rect(center = (600, 100)))
             screen.blit(message2, message2.get_rect(topleft = (100, 200)))
             screen.blit(message3, message3.get_rect(topleft = (100, 250)))
@@ -532,7 +536,9 @@ def main():
             screen.blit(message5, message5.get_rect(topleft = (100, 720)))
             screen.blit(message6, message6.get_rect(topleft = (100, 770)))
             screen.blit(message7, message7.get_rect(topleft = (100, 800)))
-            screen.blit(message8, message7.get_rect(topleft = (100, 830)))
+            screen.blit(message8, message8.get_rect(topleft = (100, 830)))
+            screen.blit(message9, message9.get_rect(topleft = (100, 855)))
+            screen.blit(message10, message10.get_rect(topleft = (100, 870)))
             start_button.draw()
         elif trial_count == 10:
             # only cover the area that's not the lightbulbs
