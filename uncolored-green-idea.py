@@ -203,7 +203,7 @@ def get_options(sentence, current_location, stepwise_score):
     # if a content word, get one ungrammatical and two grammatical options
     if sentence[current_location] in content_words:
         # get one ungrammatical option
-        ungrammatical_node = random.choice([key for key in list(words.keys()) if key not in block_list[sentence[current_location]]])
+        ungrammatical_node = random.choice([key for key in list(words.keys()) if key in white_list[sentence[current_location-1]]])
         ungrammatical_choice = random.choice(words[ungrammatical_node])
         # ungrammatical choice will reduce chomsky_score by stepwise
         options[ungrammatical_choice] = -stepwise_score
@@ -249,9 +249,9 @@ def get_options_based_on_similarity(sentence, current_location, stepwise_score):
 def get_two_ungrammatics(sentence, current_location, stepwise_score):
     options = {}
     # get ungrammatical options
-    ungrammatical_node1 = random.choice([key for key in list(words.keys()) if key not in block_list[sentence[current_location]]])
+    ungrammatical_node1 = random.choice([key for key in list(words.keys()) if key in white_list[sentence[current_location-1]]])
     ungrammatical_choice1 = random.choice(words[ungrammatical_node1])
-    ungrammatical_node2 = random.choice([key for key in list(words.keys()) if key not in block_list[sentence[current_location]]])
+    ungrammatical_node2 = random.choice([key for key in list(words.keys()) if key in white_list[sentence[current_location-1]]])
     if ungrammatical_node1 == ungrammatical_node2:
         second_pool = words[ungrammatical_node2].copy()
         second_pool.remove(ungrammatical_choice1)
@@ -384,7 +384,7 @@ def roll_all_sentences():
 ##########
 def main():
     global screen, icon, clock, button_font, text_font, text_font_large, text_font_small, text_font_smaller
-    global cfg, content_words, words, block_list, sim_model
+    global cfg, content_words, words, white_list, sim_model
     global running, started, selected, current_location, option_buttons
     ##########
     # Initialise
@@ -410,7 +410,7 @@ def main():
     text_font_large = pygame.font.Font('assets/aes/joystix-monospace.otf',50)
     button_font = pygame.font.Font('assets/aes/joystix-monospace.otf',28)
     # buttons
-    start_button = Button('start', 130, 50, (535, 550), 3, start)
+    start_button = Button('start', 130, 50, (535, 500), 3, start)
     restart_button = Button('new game', 220, 50, (800, 300), 3, start)
     quit_button = Button('quit game', 220, 50, (1100, 300), 3, quit)
     # the green idea
@@ -456,8 +456,9 @@ def main():
             except KeyError:
                 cfg[row[0]] = [row[1:]]
     # get a pos:words dictionary
-    needed = ['NN','NNS','DTS','DTP','JJ','CD','VBDI','VBZI','VBGI','RBA','VBD','VBZ','VBG','COPSN','COPSP','VBI','VB','COPPN','COPPP','RBP','IN']
-    content_words = ['NN','NNS','JJ','VBDI','VBZI','VBGI','RBA','VBD','VBZ','VBG','VBI','VB','RBP']
+    # I removded all the irregular past particles and just used VBN as the past tense verb
+    needed = ['NN','NNS','DTS','DTP','JJ','CD','VBDI','VBZI','VBGI','RBA','VBD','VBN','VBZ','VBG','COPSN','COPSP','VBI','VB','VBP','COPPN','COPPP','RBP','IN']
+    content_words = ['NN','NNS','JJ','VBDI','VBZI','VBGI','RBA','VBD','VBN','VBZ','VBG','VBI','VB','VBP','RBP']
     with open('assets/data/pos_corpus_built_from_wiki_cleaned.csv', 'r') as wordinput:
         cr = csv.reader(wordinput)
         words = {}
@@ -467,12 +468,12 @@ def main():
                     words[line[0]] = [line[1]]
                 else:
                     words[line[0]].append(line[1])
-    # get the block list
-    with open('assets/data/block_list.csv', 'r') as blockinput:
+    # get the white list for ungrammatical choices
+    with open('assets/data/incorrect_continuations.csv', 'r') as blockinput:
         cr = csv.reader(blockinput)
-        block_list = {}
+        white_list = {}
         for line in cr:
-            block_list[line[0]] = line[1:]
+            white_list[line[0]] = line[1:]
     # load similarity model
     sim_model = load_sim_model()
     # sim_model = []
@@ -517,15 +518,17 @@ def main():
             message3 = text_font_small.render('Choose the option that continues the sentence grammatically.', True, jet)
             message4 = text_font_small.render('Gain more C(homsky)P(oints) if your choice makes less sense.', True, jet)
             message5 = text_font_small.render('created by Yiling Huo', True, battleship)
-            message6 = text_font_smaller.render('images: Bakunetsu Kaito', True, battleship)
+            message6 = text_font_smaller.render('special thanks: Andrew Lamont, Bing Li', True, battleship)
             message7 = text_font_smaller.render('music: maoudamashii', True, battleship)
+            message8 = text_font_smaller.render('images: Bakunetsu Kaito', True, battleship)
             screen.blit(message1, message1.get_rect(center = (600, 100)))
             screen.blit(message2, message2.get_rect(topleft = (100, 200)))
             screen.blit(message3, message3.get_rect(topleft = (100, 250)))
             screen.blit(message4, message4.get_rect(topleft = (100, 300)))
-            screen.blit(message5, message5.get_rect(topleft = (100, 750)))
-            screen.blit(message6, message6.get_rect(topleft = (100, 800)))
-            screen.blit(message7, message7.get_rect(topleft = (100, 830)))
+            screen.blit(message5, message5.get_rect(topleft = (100, 720)))
+            screen.blit(message6, message6.get_rect(topleft = (100, 770)))
+            screen.blit(message7, message7.get_rect(topleft = (100, 800)))
+            screen.blit(message8, message7.get_rect(topleft = (100, 830)))
             start_button.draw()
         elif trial_count == 10:
             # only cover the area that's not the lightbulbs

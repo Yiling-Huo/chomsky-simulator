@@ -5,6 +5,12 @@ A game where you get to build grammatical nonsense sentences like Chomsky did.
 
 [Video demo](https://youtu.be/_x3nDgyR4fc)
 
+### version 0.1.2
+
+2024-03-11:
+- Improved player experience: the ungrammatical choices should now be 'more ungrammatical': Changed the logic to determine ungrammaticality from the block-list to a white-list. 
+- Added some more words.
+
 ### version 0.1.1
 
 2024-03-10:

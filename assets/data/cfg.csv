@@ -27,11 +27,9 @@
 "VPsi","COPs","RBA","VBGI"
 
 "VPst","VBD"
-"VPst","VBN"
 "VPst","VBZ"
 "VPst","COPs","VBG"
 "VPst","RBA","VBD"
-"VPst","RBA","VBN"
 "VPst","RBA","VBZ"
 "VPst","COPs","RBA","VBG"
 
@@ -53,14 +51,10 @@
 "VPpi","COPp","RBA","VBGI"
 
 "VPpt","VBD"
-"VPpt","VBN"
 "VPpt","VB"
-"VPpt","VBP"
 "VPpt","COPp","VBG"
 "VPpt","RBA","VBD"
-"VPpt","RBA","VBN"
 "VPpt","RBA","VB"
-"VPpt","RBA","VBP"
 "VPpt","COPp","RBA","VBG"
 
 "COPp","COPPN"
