@@ -168,17 +168,16 @@ def init_game():
 
 # initialise a trial
 def init_trial():
-    global trial_count, sentence, selected, current_location, last_content_word, stepwise_score, trial_score
+    global trial_count, sentence, selected, current_location, sentence_content_words, stepwise_score, trial_score
     wipe()
     sentence = []
+    sentence_content_words = []
     trial_score = 0
     generate(cfg)
     # change variables
     selected = [[random.choice(words[sentence[0]])]]
     if sentence[0][0] in content_words:
-        last_content_word = selected[0][0]
-    else:
-        last_content_word = ''
+        sentence_content_words.append(selected[0][0])
     # the first word doesn't count into the scores
     stepwise_score = int(100/(len(sentence)-1))
     current_location = 1
@@ -224,15 +223,19 @@ def get_options_based_on_similarity(sentence, current_location, stepwise_score):
     second_pool = words[sentence[current_location]].copy()
     second_pool.remove(option1)
     option2 = random.choice(second_pool)
-    if len(last_content_word) > 0:
+    if len(sentence_content_words) > 0:
         try:
-            # calculate scores for each options based on similarity
-            similarity1 = sim_model.similarity(option1, last_content_word)
-            similarity2 = sim_model.similarity(option2, last_content_word)
-            if similarity1 > similarity2:
+            # calculate scores for each options based on similarity for all content words
+            # similarity1 = sim_model.similarity(option1, sentence_content_words)
+            # similarity2 = sim_model.similarity(option2, sentence_content_words)
+            similarities = {option1:0, option2:0}
+            for option in [option1, option2]:
+                for word in sentence_content_words:
+                    similarities[option] += sim_model.similarity(option, word)
+            if similarities[option1] > similarities[option2]:
                 options[option2] = stepwise_score
                 options[option1] = int((stepwise_score/2))
-            elif similarity1 < similarity2:
+            elif similarities[option1] < similarities[option2]:
                 options[option1] = stepwise_score
                 options[option2] = int((stepwise_score/2))
             else:
@@ -270,7 +273,7 @@ def get_two_ungrammatics(sentence, current_location, stepwise_score):
     return options
 
 def select():
-    global chomsky_score, trial_score, last_content_word, option_buttons
+    global chomsky_score, trial_score, sentence_content_words, option_buttons
     mouse_pos = pygame.mouse.get_pos()
     answer = ''
     for button in option_buttons:
@@ -298,7 +301,8 @@ def select():
     trial_score += options[answer]
     chomsky_score += options[answer]
     if options[answer] > 0:
-        last_content_word = answer
+        if sentence[current_location] in content_words:
+            sentence_content_words.append(answer)
         selected[-1].append(answer) if len(selected[-1]) < 7 else selected.append([answer])
         correct()
     else:
