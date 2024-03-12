@@ -1,4 +1,5 @@
 import pygame, gensim, csv, os, sys, random, numpy
+from datetime import datetime
 
 ##########
 # Appearances
@@ -157,19 +158,21 @@ def start():
 
 # initialise a game of 10 trials
 def init_game():
-    global trial_count, correct_count, chomsky_score, all_sentences, rolling
+    global trial_count, correct_count, chomsky_score, all_sentences, rolling, recorded
     wipe()
     trial_count = 0
     correct_count = 0
     chomsky_score = 0
     all_sentences = []
     rolling = True
+    recorded = False
     init_trial()
 
 # initialise a trial
 def init_trial():
     global trial_count, sentence, selected, current_location, sentence_content_words, stepwise_score, trial_score
     wipe()
+    trial_count += 1
     sentence = []
     sentence_content_words = []
     trial_score = 0
@@ -312,10 +315,9 @@ def select():
     wipe()
 
 def correct():
-    global sentence, current_location, stepwise_score, trial_count
+    global sentence, current_location, stepwise_score, trial_count, high_scores, now_string, recorded
     # if end of sentence, start a new trial
     if current_location == len(sentence)-1:
-        trial_count += 1
         # initialise another trial after some time
         correct = button_font.render('Cool!', True, jet) if trial_score > 80 else button_font.render('Nice!', True, jet)
         start_time = pygame.time.get_ticks()
@@ -341,6 +343,18 @@ def correct():
         all_sentences.append([' '])
         for line in selected:
             all_sentences.append(line)
+        # record high score at the end of game if needed
+        if trial_count >= 10 and not recorded:
+            now = datetime.now()
+            now_string = now.strftime("%d/%m/%Y %H:%M")
+            if len(high_scores) == 3:
+                if chomsky_score >= min(high_scores.keys()):
+                    high_scores.pop(min(high_scores.keys()))
+                    high_scores[chomsky_score] = now_string
+            else:
+                high_scores[chomsky_score] = now_string
+            write_high_score()
+            recorded = True
         wipe()
         init_trial()
     else:
@@ -348,9 +362,10 @@ def correct():
         current_location += 1
         get_options(sentence, current_location, stepwise_score)
 
+
+
 def wrong():
-    global trial_count
-    trial_count += 1
+    global trial_count, high_scores, now_string, recorded
     start_time = pygame.time.get_ticks()
     delay = 1000
     while True:
@@ -371,6 +386,17 @@ def wrong():
     all_sentences.append([' '])
     for line in selected:
         all_sentences.append(line)
+    if trial_count >= 10 and not recorded:
+        now = datetime.now()
+        now_string = now.strftime("%d/%m/%Y %H:%M")
+        if len(high_scores) == 3:
+            if chomsky_score >= min(high_scores.keys()):
+                high_scores.pop(min(high_scores.keys()))
+                high_scores[chomsky_score] = now_string
+        else:
+            high_scores[chomsky_score] = now_string
+        write_high_score()
+        recorded = True
     wipe()
     init_trial()
 
@@ -385,13 +411,19 @@ def roll_all_sentences():
             message = text_font_smaller.render(' '.join(all_sentences[i]), True, jet)
             screen.blit(message, message.get_rect(topleft = (100, 100+(i*25))))
 
+def write_high_score():
+    with open(save_file,'w') as highoutput:
+        wr = csv.writer(highoutput, lineterminator='\n')
+        for record in high_scores:
+            wr.writerow([record,high_scores[record]])
+
 ##########
 # Main function
 ##########
 def main():
     global screen, icon, clock, button_font, text_font, text_font_large, text_font_small, text_font_smaller
-    global cfg, content_words, words, white_list, sim_model
-    global running, started, selected, current_location, option_buttons
+    global cfg, content_words, words, white_list, sim_model, save_file
+    global running, started, recorded, selected, current_location, option_buttons, high_scores
     ##########
     # Initialise
     ##########
@@ -416,13 +448,13 @@ def main():
     text_font_large = pygame.font.Font('assets/aes/joystix-monospace.otf',50)
     button_font = pygame.font.Font('assets/aes/joystix-monospace.otf',28)
     # buttons
-    start_button = Button('start', 130, 50, (535, 500), 3, start)
-    restart_button = Button('new game', 220, 50, (800, 300), 3, start)
-    quit_button = Button('quit game', 220, 50, (1100, 300), 3, quit)
+    start_button = Button('start', 130, 50, (550, 600), 3, start)
+    restart_button = Button('new game', 220, 50, (800, 380), 3, start)
+    quit_button = Button('quit game', 220, 50, (1100, 380), 3, quit)
     # the green idea
-    chat = pygame.transform.scale(pygame.image.load('assets/aes/chat2.png'), (200,200))
-    idea_dark = pygame.transform.scale(pygame.image.load('assets/aes/idea-dark.png'), (350,350))
-    idea_light = pygame.transform.scale(pygame.image.load('assets/aes/idea-light.png'), (350,350))
+    chat = pygame.transform.scale(pygame.image.load('assets/aes/chat2.png'), (150,150))
+    idea_dark = pygame.transform.scale(pygame.image.load('assets/aes/idea-dark.png'), (300,300))
+    idea_light = pygame.transform.scale(pygame.image.load('assets/aes/idea-light.png'), (300,300))
     ideas = [idea_dark, idea_light]
     index = 0
     interval = 2500
@@ -451,6 +483,21 @@ def main():
     screen.blit(load_message, load_message.get_rect(center = (950, 750)))
     pygame.display.flip()
 
+    # get high score records
+    home_dir = os.path.expanduser("~")
+    save_folder = os.path.join(home_dir, "Documents/Uncolored Green Idea Game/data/")
+    if not os.path.exists(save_folder):
+        os.makedirs(save_folder)
+    save_file = save_folder+'high-scores.csv'
+    with open(save_file,'a+') as highinput:
+        highinput.seek(0)
+        cr = csv.reader(highinput)
+        content = [line for line in cr]
+        high_scores = {}
+        if len(content) > 0:
+            for record in content:
+                high_scores[int(record[0])] = record[1]
+
     # get cfg from a .csv file of either node,word or node,node1,node2
     with open('assets/data/cfg.csv', 'r') as inputfile:
         cr = csv.reader(inputfile)
@@ -463,7 +510,7 @@ def main():
                 cfg[row[0]] = [row[1:]]
     # get a pos:words dictionary
     # I removded all the irregular past particles and just used VBN as the past tense verb
-    needed = ['NN','NNS','DTS','DTP','JJ','CD','VBDI','VBZI','VBGI','RBA','VBD','VBN','VBZ','VBG','COPSN','COPSP','VBI','VB','VBP','COPPN','COPPP','RBP','IN']
+    needed = ['NN','NNS','DTS','DTP','JJ','CD','VBDI','VBZI','VBGI','RBA','VBD','VBN','VBZ','VBG','COPSN','COPSP','VBI','VB','VBP','COPPN','COPPP','RBP','IN','AM']
     content_words = ['NN','NNS','JJ','VBDI','VBZI','VBGI','RBA','VBD','VBN','VBZ','VBG','VBI','VB','VBP','RBP']
     with open('assets/data/pos_corpus_built_from_wiki_cleaned.csv', 'r') as wordinput:
         cr = csv.reader(wordinput)
@@ -495,6 +542,7 @@ def main():
     wipe()
     start_time = pygame.time.get_ticks()
     started = False
+    recorded = False
     running = True
 
     # main loop
@@ -505,11 +553,11 @@ def main():
                 # pygame.quit()
         
         # draw the lightbulb and the chat images
-        screen.blit(chat, (800,400))
+        screen.blit(chat, (900,500))
         current_time = pygame.time.get_ticks()
-        screen.blit(ideas[index], (1000,475))
+        screen.blit(ideas[index], (1050,500))
         if current_time - start_time >= interval:
-            pygame.draw.rect(screen,porcelain,pygame.Rect(1000, 475, 350, 350))
+            pygame.draw.rect(screen,porcelain,pygame.Rect(1050, 500, 300, 300))
             if index == 1:
                 index -= 1
             else:
@@ -519,6 +567,7 @@ def main():
 
         # manage game
         if not started:
+            # instructions
             message1 = text_font.render('Uncolored Green Idea Game', True, jet)
             message2 = text_font_small.render("Let's build grammatical sentences that make no semantic sense.", True, jet)
             message3 = text_font_small.render('Choose the option that continues the sentence grammatically.', True, jet)
@@ -527,8 +576,6 @@ def main():
             message6 = text_font_smaller.render('special thanks: Andrew Lamont, Bing Li', True, battleship)
             message7 = text_font_smaller.render('music: maoudamashii', True, battleship)
             message8 = text_font_smaller.render('images: Bakunetsu Kaito', True, battleship)
-            message9 = text_font_smaller.render("early access note: game only knows simple syntax (no compound nouns, relative clauses, etc.).",True,battleship)
-            message10 = text_font_smaller.render("                   game doesn't recognize some POS-ambiguous words (stop v./n.).",True,battleship)
             screen.blit(message1, message1.get_rect(center = (600, 100)))
             screen.blit(message2, message2.get_rect(topleft = (100, 200)))
             screen.blit(message3, message3.get_rect(topleft = (100, 250)))
@@ -537,18 +584,48 @@ def main():
             screen.blit(message6, message6.get_rect(topleft = (100, 770)))
             screen.blit(message7, message7.get_rect(topleft = (100, 800)))
             screen.blit(message8, message8.get_rect(topleft = (100, 830)))
+            # high scores
+            high_message = text_font.render('high scores', True, jet)
+            screen.blit(high_message, high_message.get_rect(topleft = (100, 400)))
+            scores = list(reversed(sorted(high_scores.items())))
+            for i in range(3):
+                try:
+                    mes = text_font_small.render(scores[i][1]+'  '+str(scores[i][0]), True, jet)
+                    screen.blit(mes, mes.get_rect(topleft = (100, 450+i*30)))
+                except IndexError:
+                    mes = text_font_small.render('No record', True, jet)
+                    screen.blit(mes, mes.get_rect(topleft = (100, 450+i*30)))
+            # early access warning
+            message9 = text_font_smaller.render("early access note: game only knows simple syntax (no compound nouns, relative clauses, etc.).",True,battleship)
+            message10 = text_font_smaller.render("                   game doesn't recognize some POS-ambiguous words (stop v./n.).",True,battleship)
             screen.blit(message9, message9.get_rect(topleft = (100, 855)))
             screen.blit(message10, message10.get_rect(topleft = (100, 870)))
+            # start button
             start_button.draw()
-        elif trial_count == 10:
+        elif trial_count >= 11:
             # only cover the area that's not the lightbulbs
             pygame.draw.rect(screen, porcelain, pygame.Rect(0, 0, window_width, 395))
             pygame.draw.rect(screen, porcelain, pygame.Rect(0, 0, 795, window_height))
             message1 = text_font.render('Game end!', True, jet)
             message2 = text_font_small.render('Your CP: '+str(chomsky_score), True, jet)
+            screen.blit(message1, message1.get_rect(center = (1050, 60)))
+            screen.blit(message2, message2.get_rect(center = (1050, 110)))
+            # high scores
+            high_message = text_font.render('high scores', True, jet)
+            screen.blit(high_message, high_message.get_rect(topleft = (850, 180)))
+            scores = list(reversed(sorted(high_scores.items())))
+            for i in range(3):
+                try:
+                    if list(reversed(sorted(high_scores.items())))[i][1] == now_string:
+                        mes = text_font_small.render(scores[i][1]+'  '+str(scores[i][0])+'  New!', True, jet)
+                        screen.blit(mes, mes.get_rect(topleft = (850, 220+i*30)))
+                    else:
+                        mes = text_font_small.render(scores[i][1]+'  '+str(scores[i][0]), True, jet)
+                        screen.blit(mes, mes.get_rect(topleft = (850, 220+i*30)))
+                except IndexError:
+                    mes = text_font_small.render('No record', True, jet)
+                    screen.blit(mes, mes.get_rect(topleft = (850, 220+i*30)))
             message4 = text_font.render('Your sentences', True, jet)
-            screen.blit(message1, message1.get_rect(center = (1050, 100)))
-            screen.blit(message2, message2.get_rect(center = (1050, 200)))
             screen.blit(message4, message4.get_rect(topleft = (100, 50)))
             roll_all_sentences()
             quit_button.draw()
